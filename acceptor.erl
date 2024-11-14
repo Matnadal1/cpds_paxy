@@ -1,6 +1,9 @@
 -module(acceptor).
 -export([start/2]).
 
+-define(delay, 500).
+-define(drop, 3).
+
 start(Name, PanelId) ->
   spawn(fun() -> init(Name, PanelId) end).
         
@@ -15,13 +18,19 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
     {prepare, Proposer, Round} ->
       case order:gr(Round, Promised) of
         true ->
-          Proposer ! {promise, Round, Voted, Value}, % ... !  {promise, Round, Voted, Value}            
-      io:format("[Acceptor ~w] Phase 1: promised ~w voted ~w colour ~w~n",
+          P = rand:uniform(4),
+          if P =< ?drop ->
+              io:format("message dropped~n");
+            true ->
+            %send message
+              Proposer ! {promise, Round, Voted, Value}, % ... !  {promise, Round, Voted, Value}
+              io:format("[Acceptor ~w] Phase 1: promised ~w voted ~w colour ~w~n",
                  [Name, Round, Voted, Value]),
-          % Update gui
-          Colour = case Value of na -> {0,0,0}; _ -> Value end,
-          PanelId ! {updateAcc, "Voted: " ++ io_lib:format("~p", [Voted]), 
-                     "Promised: " ++ io_lib:format("~p", [Round]), Colour},
+            % Update gui
+              Colour = case Value of na -> {0,0,0}; _ -> Value end,
+              PanelId ! {updateAcc, "Voted: " ++ io_lib:format("~p", [Voted]), 
+                     "Promised: " ++ io_lib:format("~p", [Round]), Colour}
+          end,
           acceptor(Name, Round, Voted, Value, PanelId);
         false ->
           Proposer ! {sorry, {prepare, Round}}, % {sorry, {prepare, Round}}
@@ -33,7 +42,7 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
           Proposer ! {vote, Round}, % {vote, Round}
           case order:goe(Round, Voted) of % 
             true ->
-      io:format("[Acceptor ~w] Phase 2: promised ~w voted ~w colour ~w~n",
+              io:format("[Acceptor ~w] Phase 2: promised ~w voted ~w colour ~w~n",
                  [Name, Promised, Round, Proposal]),
               % Update gui
               PanelId ! {updateAcc, "Voted: " ++ io_lib:format("~p", [Round]), 
