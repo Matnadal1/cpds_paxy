@@ -1,31 +1,20 @@
 -module(acceptor).
--export([start/2, init/2, acceptor/5]).
+-export([start/2]).
+% -export([start/2, init/2, acceptor/5]).
 
 
--define(delay, 500).
+-define(delay, 5).
 -define(drop, 1).
 
 start(Name, PanelId) ->
-  spawn(fun() -> init(Name, PanelId) end),
-  pers:open(Name).
+  spawn(fun() -> init(Name, PanelId) end).
+  % pers:open(Name).
         
 init(Name, PanelId) ->
-  % Promised = order:null(), 
-  % Voted = order:null(),
-  % Value = na,
-  % acceptor(Name, Promised, Voted, Value, PanelId).
-
-  case pers:read(Name) of
-    {order, Promised, Voted, Value} ->
-        % State exists, restore it
-        acceptor(Name, Promised, Voted, Value, PanelId);
-    [] ->
-        % No state exists, initialize with default values
-        Promised = order:null(),
-        Voted = order:null(),
-        Value = na,
-        acceptor(Name, Promised, Voted, Value, PanelId)
-  end.
+  Promised = order:null(), 
+  Voted = order:null(),
+  Value = na,
+  acceptor(Name, Promised, Voted, Value, PanelId).
 
 
 acceptor(Name, Promised, Voted, Value, PanelId) ->
@@ -46,9 +35,9 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
             % Update gui
               Colour = case Value of na -> {0,0,0}; _ -> Value end,
               PanelId ! {updateAcc, "Voted: " ++ io_lib:format("~p", [Voted]), 
-                     "Promised: " ++ io_lib:format("~p", [Round]), Colour},
+                     "Promised: " ++ io_lib:format("~p", [Round]), Colour}
 
-              pers:store(Name, Round, Voted, Value, PanelId)
+              % pers:store(Name, Round, Voted, Value, PanelId)
           end,
           acceptor(Name, Round, Voted, Value, PanelId);
         false ->
@@ -70,7 +59,7 @@ acceptor(Name, Promised, Voted, Value, PanelId) ->
               % Update gui
               PanelId ! {updateAcc, "Voted: " ++ io_lib:format("~p", [Round]), 
                          "Promised: " ++ io_lib:format("~p", [Promised]), Proposal},
-              pers:store(Name, Promised, Round, Proposal, PanelId),
+              % pers:store(Name, Promised, Round, Proposal, PanelId),
               
               acceptor(Name, Promised, Round, Proposal, PanelId);
             false ->
