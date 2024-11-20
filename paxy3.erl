@@ -1,5 +1,5 @@
 -module(paxy3).
--export([start/1, start_acceptors/2, run_proposers/4, stop/0, stop/1, stop_acceptors/0, stop_proposers/0]).
+-export([start/1, start_acceptors/2, run_proposers/4, stop/0, stop/1, stop_acceptors/0, stop_proposers/0, crash/1]).
 
 -define(RED, {255,0,0}).
 -define(BLUE, {0,0,255}).
@@ -120,3 +120,18 @@ stop_proposers() ->
   stop(professor),
   stop(hermes),
   stop(scruffy).
+
+crash(Name) ->
+    case whereis(Name) of
+        undefined ->
+            ok;
+        Pid ->
+            unregister(Name),
+            exit(Pid, "crash"),
+            pers:open(Name),
+            {_, _, _, Pn} = pers:read(Name),
+            Pn ! {updateAcc, "Voted: CRASHED", "Promised: CRASHED", {0,0,0}},
+            pers:close(Name),
+            timer:sleep(3000),
+            register(Name, acceptor:start(Name, na))
+    end.
