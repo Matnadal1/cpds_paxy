@@ -94,6 +94,8 @@ stop(Name) ->
     undefined ->
       ok;
     Pid ->
+      pers:close(Name),
+      pers:delete(Name),
       Pid ! stop
   end.
 

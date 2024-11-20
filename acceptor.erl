@@ -8,14 +8,14 @@
 
 start(Name, PanelId) ->
   spawn(fun() -> init(Name, PanelId) end).
-  % pers:open(Name).
         
 init(Name, PanelId) ->
-  Promised = order:null(), 
-  Voted = order:null(),
-  Value = na,
+  pers:open(Name),
+  %Promised = order:null(), 
+  %Voted = order:null(),
+  %Value = na,
+  {Promised, Voted, Value, _} = pers:read(Name),  % Read stored state
   acceptor(Name, Promised, Voted, Value, PanelId).
-
 
 acceptor(Name, Promised, Voted, Value, PanelId) ->
   receive
