@@ -1,7 +1,7 @@
 -module(proposer).
 -export([start/6]).
 
--define(timeout, 100).
+-define(timeout, 1000).
 -define(backoff, 10).
 
 start(Name, Proposal, Acceptors, Sleep, PanelId, Main) ->

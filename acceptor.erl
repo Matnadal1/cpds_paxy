@@ -3,7 +3,7 @@
 % -export([start/2, init/2, acceptor/5]).
 
 
--define(delay, 5).
+-define(delay, 500).
 -define(drop, 1).
 
 start(Name, PanelId) ->
