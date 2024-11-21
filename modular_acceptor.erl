@@ -3,7 +3,7 @@
 
 start(Name, PanelId, Drop, Delay) ->
   spawn(fun() -> init(Name, PanelId, Drop, Delay) end).
-        
+
 init(Name, PanelId, Drop, Delay) ->
   Promised = order:null(), 
   Voted = order:null(),

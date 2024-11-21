@@ -1,6 +1,11 @@
 from utils import Trial
 
-module_name = "paxy2"
+module_name = "paxy_local"
+
+TEST_TRIALS = [
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=3, num_acceptors=3, drop=1,
+              delay=1, prop_timeout=100, prop_backoff=10, module_version="2"),
+]
 
 INCREASING_DELAY_TRIALS = [
     Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=5, drop=1,
@@ -71,29 +76,45 @@ INCREASING_NUM_ACCEPTORS_TRIALS = [
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
     Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=5, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=6, drop=1,
-              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=7, drop=1,
-              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
     Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=8, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=10, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=13, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=16, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=19, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=23, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=27, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=30, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
 ]
 
 INCREASING_NUM_PROPOSERS_TRIALS = [
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=1, num_acceptors=3, drop=1,
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=1, num_acceptors=3, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=2, num_acceptors=3, drop=1,
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=2, num_acceptors=3, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=3, num_acceptors=3, drop=1,
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=3, num_acceptors=3, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=4, num_acceptors=3, drop=1,
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=4, num_acceptors=3, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=5, num_acceptors=3, drop=1,
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=5, num_acceptors=3, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=6, num_acceptors=3, drop=1,
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=6, num_acceptors=3, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=7, num_acceptors=3, drop=1,
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=7, num_acceptors=3, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
-    Trial(module_name, sleep="[10, 100, 10, 20, 50]", num_proposers=8, num_acceptors=3, drop=1,
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=8, num_acceptors=3, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=9, num_acceptors=3, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=10, num_acceptors=3, drop=1,
+              delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
+    Trial(module_name, sleep="[10, 100, 10, 20, 50, 10, 80, 65]", num_proposers=11, num_acceptors=3, drop=1,
               delay=10, prop_timeout=100, prop_backoff=10, module_version="2"),
 ]

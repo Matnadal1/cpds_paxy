@@ -11,13 +11,12 @@ from matplotlib.ticker import MaxNLocator
 from utils import Trial, ErlangCommand, collect_erlang_responses, Plotter
 from trials import *
 
-module_name = "paxy2"
-
 # Trial(module_name, sleep, num_proposers, num_acceptors, drop, delay, prop_timeout, prop_backoff)
-TRIALS = INCREASING_DELAY_TRIALS
+TRIALS = INCREASING_NUM_ACCEPTORS_TRIALS
+OUTPUT_NAME = "increasing_acceptors_30"
 
-NEW_TRIALS = False
-FILENAME = f"out/paxy2__1732192609.047963.csv"
+NEW_TRIALS = True
+FILENAME = f"out/paxy3_no_sorry_increasing_proposers_1732215926.304058.csv"
 
 
 def run_batch(module, batch_trials, timeout=30, n=1):
@@ -32,7 +31,7 @@ def run_batch(module, batch_trials, timeout=30, n=1):
         print("====================================================================")
         print(f"Running batch {idx + 1}: {str(cmd)}")
 
-        process = PopenSpawn(["erl", f"-name paxy2-{idx}@127.0.0.1", "-setcookie", "paxy"])
+        process = PopenSpawn(["erl", "-name", f"paxy2-{idx}@127.0.0.1", "-setcookie", "paxos"])
         total_time = 0
         trial_time_results = []
         trial_round_results = []
@@ -72,7 +71,7 @@ if __name__ == "__main__":
         elapsed_times = []
         total_times = []
         for i, (trial_input, (total_time, trial_time_results, trial_round_results)) in enumerate(zip(
-                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=50))):
+                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=20))):
             try:
                 fig, axs = plt.subplots(2, figsize=(8, 6))
 
@@ -130,9 +129,7 @@ if __name__ == "__main__":
                 )
 
     plotter = Plotter(FILENAME)
-    plotter.plot("delay", "rounds", "Drop rate vs Rounds")
-    plotter.plot("delay", "elapsed_times", "Drop rate vs Consensus Time")
-    plotter.plot("delay", "total_times", "Drop rate vs Total Time")
-    plotter.plot("relative_delay", "rounds", "Relative Delay vs Rounds")
-    plotter.plot("relative_delay", "elapsed_times", "Relative Delay vs Consensus Time")
-
+    plotter.plot("num_acceptors", "rounds", "Acceptors vs Rounds")
+    plotter.plot("num_acceptors", "elapsed_times", "Acceptors vs Consensus Time")
+    # plotter.plot_n_lines("sorry", "Proposers vs Rounds", "num_proposers", "rounds", ["Not Sorry", "Sorry"])
+    # plotter.plot_n_lines("sorry", "Proposers vs Consensus Time", "num_proposers", "elapsed_times", ["Not Sorry", "Sorry"])
