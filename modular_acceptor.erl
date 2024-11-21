@@ -1,9 +1,6 @@
 -module(modular_acceptor).
 -export([start/4]).
 
-%-define(delay, 500).
-%-define(drop, 1).
-
 start(Name, PanelId, Drop, Delay) ->
   spawn(fun() -> init(Name, PanelId, Drop, Delay) end).
         
