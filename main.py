@@ -72,7 +72,7 @@ if __name__ == "__main__":
         elapsed_times = []
         total_times = []
         for i, (trial_input, (total_time, trial_time_results, trial_round_results)) in enumerate(zip(
-                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=20))):
+                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=50))):
             try:
                 fig, axs = plt.subplots(2, figsize=(8, 6))
 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
                 print("Interrupted by user.")
                 break
 
-        FILENAME = f"out/{module_name}__{time.time()}.csv"
+        FILENAME = f"out/{module_name}_{OUTPUT_NAME}_{time.time()}.csv"
         with open(FILENAME, "w") as f:
             writer = csv.writer(f)
             writer.writerow(["num_proposers", "num_acceptors", "drop_percentage", "delay", "timeouts", "backoffs", "relative_delay", "rounds", "elapsed_times", "total_times"])
