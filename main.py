@@ -8,16 +8,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
+from random_tests import RANDOM_TESTS
 from utils import Trial, ErlangCommand, collect_erlang_responses, Plotter
 from trials import *
 
 # Trial(module_name, sleep, num_proposers, num_acceptors, drop, delay, prop_timeout, prop_backoff)
-TRIALS = INCREASING_NUM_ACCEPTORS_TRIALS
-OUTPUT_NAME = "increasing_acceptors_30"
+TRIALS = TEST_TRIALS
+OUTPUT_NAME = "random_tests"
 
 NEW_TRIALS = True
-FILENAME = f"out/paxy3_no_sorry_increasing_proposers_1732215926.304058.csv"
+FILENAME = f"out/paxy_remote_sorry_delay_comp_1732220819.161141.csv"
 
+PLOT_HISTOGRAMS = False
 
 def run_batch(module, batch_trials, timeout=30, n=1):
     """
@@ -70,11 +72,12 @@ if __name__ == "__main__":
         backoffs = []
         elapsed_times = []
         total_times = []
-        for i, (trial_input, (total_time, trial_time_results, trial_round_results)) in enumerate(zip(
+        sorries = []
+        try:
+            for i, (trial_input, (total_time, trial_time_results, trial_round_results)) in enumerate(zip(
                 TRIALS, run_batch(module_name, TRIALS, timeout=10, n=20))):
-            try:
-                fig, axs = plt.subplots(2, figsize=(8, 6))
 
+                sorries.append(trial_input.count_sorries)
                 num_proposers.append(trial_input.num_proposers)
                 num_acceptors.append(trial_input.num_acceptors)
                 delays.append(trial_input.acceptors_delay)
@@ -86,35 +89,37 @@ if __name__ == "__main__":
                 elapsed_times.append(np.average(trial_time_results))
                 total_times.append(total_time)
 
-                axs[0].hist(trial_time_results, bins=10, color='b', alpha=0.5)
-                axs[0].set_xlim(min(trial_time_results), max(trial_time_results))
-                axs[0].set_xlabel('Time taken (ms)')
-                axs[0].set_ylabel('Frequency')
+                if PLOT_HISTOGRAMS:
+                    fig, axs = plt.subplots(2, figsize=(8, 6))
+                    axs[0].hist(trial_time_results, bins=10, color='b', alpha=0.5)
+                    axs[0].set_xlim(min(trial_time_results), max(trial_time_results))
+                    axs[0].set_xlabel('Time taken (ms)')
+                    axs[0].set_ylabel('Frequency')
 
-                axs[1].hist(trial_round_results, bins=10, color='r', alpha=0.5)
-                axs[1].xaxis.set_major_locator(MaxNLocator(integer=True))
-                axs[1].set_xlabel('Round')
-                axs[1].set_ylabel('Frequency')
+                    axs[1].hist(trial_round_results, bins=10, color='r', alpha=0.5)
+                    axs[1].xaxis.set_major_locator(MaxNLocator(integer=True))
+                    axs[1].set_xlabel('Round')
+                    axs[1].set_ylabel('Frequency')
 
-                fig.suptitle(
-                    f"Trial {i + 1} (delay={trial_input.acceptors_delay}, drop={trial_input.drop}) "
-                    f"Results: Time Taken and Round Frequency",
-                    fontsize=14,
-                )
-                fig.tight_layout()
-                plt.show()
-            except KeyboardInterrupt as e:
-                print("Interrupted by user.")
-                break
+                    fig.suptitle(
+                        f"Trial {i + 1} (delay={trial_input.acceptors_delay}, drop={trial_input.drop}) "
+                        f"Results: Time Taken and Round Frequency",
+                        fontsize=14,
+                    )
+                    fig.tight_layout()
+                    plt.show()
+        except KeyboardInterrupt as e:
+            print("Interrupted by user.")
 
         FILENAME = f"out/{module_name}_{OUTPUT_NAME}_{time.time()}.csv"
         with open(FILENAME, "w") as f:
             writer = csv.writer(f)
-            writer.writerow(["num_proposers", "num_acceptors", "drop_percentage", "delay", "timeouts", "backoffs", "relative_delay", "rounds", "elapsed_times", "total_times"])
-            for i_num_proposers, i_num_acceptors, i_drop_percentage, i_delay, i_timeouts, i_backoffs, i_rounds, i_elapsed_times, i_total_times in zip(
-                    num_proposers, num_acceptors, drop_percentages, delays, timeouts, backoffs, rounds, elapsed_times, total_times):
+            writer.writerow(["sorry", "num_proposers", "num_acceptors", "drop_percentage", "delay", "timeouts", "backoffs", "relative_delay", "rounds", "elapsed_times", "total_times"])
+            for i_num_proposers, i_num_acceptors, i_drop_percentage, i_delay, i_timeouts, i_backoffs, i_rounds, i_elapsed_times, i_total_times, i_count_sorries in zip(
+                    num_proposers, num_acceptors, drop_percentages, delays, timeouts, backoffs, rounds, elapsed_times, total_times, sorries):
                 writer.writerow(
                     [
+                        i_count_sorries,
                         i_num_proposers,
                         i_num_acceptors,
                         i_drop_percentage,
@@ -128,8 +133,8 @@ if __name__ == "__main__":
                     ]
                 )
 
-    plotter = Plotter(FILENAME)
-    plotter.plot("num_acceptors", "rounds", "Acceptors vs Rounds")
-    plotter.plot("num_acceptors", "elapsed_times", "Acceptors vs Consensus Time")
-    # plotter.plot_n_lines("sorry", "Proposers vs Rounds", "num_proposers", "rounds", ["Not Sorry", "Sorry"])
-    # plotter.plot_n_lines("sorry", "Proposers vs Consensus Time", "num_proposers", "elapsed_times", ["Not Sorry", "Sorry"])
+    # plotter = Plotter(FILENAME)
+    # plotter.plot("num_proposers", "rounds", "Proposers vs Rounds")
+    # plotter.plot("num_proposers", "elapsed_times", "Proposers vs Consensus Time")
+    # plotter.plot_n_lines("sorry", "Delay vs Rounds", "delay", "rounds", ["Not Sorry", "Sorry"])
+    # plotter.plot_n_lines("sorry", "Delay vs Consensus Time", "delay", "elapsed_times", ["Not Sorry", "Sorry"])

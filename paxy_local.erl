@@ -117,7 +117,10 @@ stopAll() ->
   AccRegister = [
     homer, marge, bart, lisa, maggie, 
     ned, maude, rod, todd, milhouse,
-    apu, manjula, carl, lenny, ralph
+    apu, manjula, carl, lenny, ralph,
+    nelson, jimbo, martin, skinner, edna,
+    otto, krusty, barney, smithers, burns,
+    wiggum, lou, eddie, seymour, gil
   ],
 
   [stop(Name) || Name <- AccRegister].

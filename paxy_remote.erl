@@ -1,5 +1,5 @@
 -module(paxy_remote).
--export([start/1, start/7, start_acceptors/4, run_proposers/6, stop/0, stop/1, stop_acceptors/0, stop_proposers/0, stopAll/0, crash/1]).
+-export([start/1, start/8, start_acceptors/4, run_proposers/7, stop/0, stop/1, stop_acceptors/0, stop_proposers/0, stopAll/0, crash/1]).
 
 -define(RED, {255,0,0}).
 -define(BLUE, {0,0,255}).
@@ -15,8 +15,8 @@
 
 % Sleep is a list with the initial sleep time for each proposer
 start(Sleep) ->
-  start(Sleep, 3, 5, 1, 1, 2000, 100).
-start(Sleep, NumProposers, NumAcceptors, Drop, Delay, PropTimeout, PropBackoff) ->
+  start(Sleep, 3, 5, 1, 1, 2000, 100, 0).
+start(Sleep, NumProposers, NumAcceptors, Drop, Delay, PropTimeout, PropBackoff, SorryCount) ->
   % Define lists of names and corresponding data
   AcceptorNames = [
       "Homer", "Marge", "Bart", "Lisa", "Maggie", 
@@ -68,9 +68,9 @@ start(Sleep, NumProposers, NumAcceptors, Drop, Delay, PropTimeout, PropBackoff) 
       {AccIds, PropIds} = State,
       
       % Spawn acceptors on the remote 'paxy-acc' node
-      spawn('paxy-acc@127.0.0.1', paxy3, start_acceptors, [AccIds, QualifiedAccRegister, Drop, Delay]),
+      spawn('paxy-acc@127.0.0.1', paxy_remote, start_acceptors, [AccIds, QualifiedAccRegister, Drop, Delay]),
       % Wait for all proposers to finish
-      spawn('paxy-pro@127.0.0.1', paxy3, run_proposers, [PropIds, QualifiedProRegisters, QualifiedAccRegister, Sleep, PropTimeout, PropBackoff])
+      spawn('paxy-pro@127.0.0.1', paxy_remote, run_proposers, [PropIds, QualifiedProRegisters, QualifiedAccRegister, Sleep, PropTimeout, PropBackoff, SorryCount])
   end.
 
 start_acceptors(AccIds, AccReg, Drop, Delay) ->
@@ -85,24 +85,24 @@ start_acceptors(AccIds, AccReg, Drop, Delay) ->
       start_acceptors(Rest, RegNameRest, Drop, Delay)
   end.
 
-run_proposers(PropIds, PropInfo, Acceptors, Sleep, Timeout, Backoff) ->
+run_proposers(PropIds, PropInfo, Acceptors, Sleep, Timeout, Backoff, SorryCount) ->
     Begin = erlang:monotonic_time(),
     % Spawn proposers on the remote 'paxy-pro' node
-    start_proposers(PropIds, PropInfo, Acceptors, Sleep, Timeout, Backoff, self()),
+    start_proposers(PropIds, PropInfo, Acceptors, Sleep, Timeout, Backoff, SorryCount, self()),
     wait_proposers(length(PropIds)),
     End = erlang:monotonic_time(),
     Elapsed = erlang:convert_time_unit(End-Begin, native, millisecond),
     io:format("[Paxy] Total elapsed time: ~w ms~n", [Elapsed]).
 
-start_proposers(PropIds, PropInfo, Acceptors, Sleep, Timeout, Backoff, Main) ->
+start_proposers(PropIds, PropInfo, Acceptors, Sleep, Timeout, Backoff, SorryCount, Main) ->
   case PropIds of
     [] ->
       ok;
     [PropId|Rest] ->
       [{{RegName, Colour}, _}|RestInfo] = PropInfo,
       [FirstSleep|RestSleep] = Sleep,
-      modular_proposer:start(RegName, Colour, Acceptors, FirstSleep, PropId, Timeout, Backoff, Main),	
-      start_proposers(Rest, RestInfo, Acceptors, RestSleep, Timeout, Backoff, Main)
+      modular_proposer:start(RegName, Colour, Acceptors, FirstSleep, PropId, Timeout, Backoff, SorryCount, Main),	
+      start_proposers(Rest, RestInfo, Acceptors, RestSleep, Timeout, Backoff, SorryCount, Main)
   end.
 
 
@@ -142,7 +142,10 @@ stop_acceptors() ->
   AccRegister = [
     homer, marge, bart, lisa, maggie, 
     ned, maude, rod, todd, milhouse,
-    apu, manjula, carl, lenny, ralph
+    apu, manjula, carl, lenny, ralph,
+    nelson, jimbo, martin, skinner, edna,
+    otto, krusty, barney, smithers, burns,
+    wiggum, lou, eddie, seymour, gil
   ],
   [stop(Name) || Name <- AccRegister].
 
