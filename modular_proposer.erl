@@ -80,7 +80,7 @@ collect(N, Round, MaxVoted, Proposal, Timeout, SorryCount, TotalAcceptors, Count
         {sorry, {prepare, Round}} ->
           collect(N, Round, MaxVoted, Proposal, Timeout, SorryCount + CountSorries, TotalAcceptors, CountSorries);
         {sorry, _} ->
-          collect(N, Round, MaxVoted, Proposal, Timeout, SorryCount + CountSorries, TotalAcceptors, CountSorries)
+          collect(N, Round, MaxVoted, Proposal, Timeout, SorryCount, TotalAcceptors, CountSorries)
       after Timeout ->
         abort
       end
@@ -105,7 +105,7 @@ vote(N, Round, Timeout, SorryCount, TotalAcceptors, CountSorries) ->
         {sorry, {accept, Round}} ->
           vote(N, Round, Timeout, SorryCount + CountSorries, TotalAcceptors, CountSorries);
         {sorry, _} ->
-          vote(N, Round, Timeout, SorryCount + CountSorries, TotalAcceptors, CountSorries)
+          vote(N, Round, Timeout, SorryCount, TotalAcceptors, CountSorries)
       after Timeout ->
         abort
       end

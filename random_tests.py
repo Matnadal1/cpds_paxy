@@ -2,7 +2,7 @@ from trials import module_name
 from utils import Trial
 
 RANDOM_TESTS = [
-Trial(module_name, sleep="[57, 12, 47, 87, 86, 25, 17, 55, 11, 59, 71]", num_proposers=11, num_acceptors=26, drop=42, delay=486, prop_timeout=100, prop_backoff=10, module_version="2", sorry=1),
+Trial(module_name, sleep="[57, 12, 47, 87, 86, 25, 17, 55, 11, 59, 71]", num_proposers=11, num_acceptors=26, drop=42, delay=48, prop_timeout=100, prop_backoff=10, module_version="2", sorry=1),
 Trial(module_name, sleep="[93, 87, 95, 37]", num_proposers=4, num_acceptors=4, drop=24, delay=308, prop_timeout=100, prop_backoff=10, module_version="2", sorry=1),
 Trial(module_name, sleep="[74, 78, 38, 93, 40, 98, 20]", num_proposers=7, num_acceptors=28, drop=21, delay=240, prop_timeout=100, prop_backoff=10, module_version="2", sorry=0),
 Trial(module_name, sleep="[23]", num_proposers=1, num_acceptors=21, drop=57, delay=191, prop_timeout=100, prop_backoff=10, module_version="2", sorry=0),

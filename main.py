@@ -13,7 +13,7 @@ from utils import Trial, ErlangCommand, collect_erlang_responses, Plotter
 from trials import *
 
 # Trial(module_name, sleep, num_proposers, num_acceptors, drop, delay, prop_timeout, prop_backoff)
-TRIALS = TEST_TRIALS
+TRIALS = RANDOM_TESTS
 OUTPUT_NAME = "random_tests"
 
 NEW_TRIALS = True
@@ -37,6 +37,7 @@ def run_batch(module, batch_trials, timeout=30, n=1):
         total_time = 0
         trial_time_results = []
         trial_round_results = []
+        timeout_count = 0
         for _ in range(n):
             # Execute the Erlang command in bash
             process.write(str(cmd) + "\n")
@@ -48,6 +49,7 @@ def run_batch(module, batch_trials, timeout=30, n=1):
             if not timeout_end:
                 trial_round_results.append(max_round)
             else:
+                timeout_count += 1
                 trial_round_results.append(max_round)
                 print(f"Timeout occurred in batch {idx + 1} after {max_round} rounds.")
 
@@ -57,7 +59,7 @@ def run_batch(module, batch_trials, timeout=30, n=1):
         process.kill(signal.SIGTERM)
         print(f"\nBatch {idx + 1} completed after {total_time} ms")
         print("====================================================================")
-        yield total_time, trial_time_results, trial_round_results
+        yield total_time, trial_time_results, trial_round_results, timeout_count
 
 
 if __name__ == "__main__":
@@ -73,9 +75,10 @@ if __name__ == "__main__":
         elapsed_times = []
         total_times = []
         sorries = []
+        timeout_results = []
         try:
-            for i, (trial_input, (total_time, trial_time_results, trial_round_results)) in enumerate(zip(
-                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=20))):
+            for i, (trial_input, (total_time, trial_time_results, trial_round_results, timeout_count)) in enumerate(zip(
+                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=10))):
 
                 sorries.append(trial_input.count_sorries)
                 num_proposers.append(trial_input.num_proposers)
@@ -85,6 +88,7 @@ if __name__ == "__main__":
                 timeouts.append(trial_input.proposers_timeout)
                 backoffs.append(trial_input.proposers_backoff)
 
+                timeout_results.append(timeout_count)
                 rounds.append(np.average(trial_round_results))
                 elapsed_times.append(np.average(trial_time_results))
                 total_times.append(total_time)
@@ -114,9 +118,9 @@ if __name__ == "__main__":
         FILENAME = f"out/{module_name}_{OUTPUT_NAME}_{time.time()}.csv"
         with open(FILENAME, "w") as f:
             writer = csv.writer(f)
-            writer.writerow(["sorry", "num_proposers", "num_acceptors", "drop_percentage", "delay", "timeouts", "backoffs", "relative_delay", "rounds", "elapsed_times", "total_times"])
-            for i_num_proposers, i_num_acceptors, i_drop_percentage, i_delay, i_timeouts, i_backoffs, i_rounds, i_elapsed_times, i_total_times, i_count_sorries in zip(
-                    num_proposers, num_acceptors, drop_percentages, delays, timeouts, backoffs, rounds, elapsed_times, total_times, sorries):
+            writer.writerow(["sorry", "num_proposers", "num_acceptors", "drop_percentage", "delay", "timeouts", "backoffs", "relative_delay", "rounds", "elapsed_times", "total_times", "timeout_count"])
+            for i_num_proposers, i_num_acceptors, i_drop_percentage, i_delay, i_timeouts, i_backoffs, i_rounds, i_elapsed_times, i_total_times, i_count_sorries, i_timeout_count in zip(
+                    num_proposers, num_acceptors, drop_percentages, delays, timeouts, backoffs, rounds, elapsed_times, total_times, sorries, timeout_results):
                 writer.writerow(
                     [
                         i_count_sorries,
@@ -130,6 +134,7 @@ if __name__ == "__main__":
                         i_rounds,
                         i_elapsed_times,
                         i_total_times,
+                        i_timeout_count,
                     ]
                 )
 

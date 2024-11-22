@@ -118,9 +118,9 @@ wait_proposers(N) ->
 % Stop all processes on both nodes
 stop() ->
   % Stop acceptors on paxy-acc
-  spawn('paxy-acc@127.0.0.1', paxy3, stop_acceptors, []),
+  spawn('paxy-acc@127.0.0.1', paxy_remote, stop_acceptors, []),
   % Stop proposers on paxy-pro
-  spawn('paxy-pro@127.0.0.1', paxy3, stop_proposers, []),
+  spawn('paxy-pro@127.0.0.1', paxy_remote, stop_proposers, []),
   % Stop local GUI process
   stop(gui),
   stop_proposers(),
@@ -167,9 +167,9 @@ stopAll() ->
   stop(gui),
 
   % Stop acceptors on paxy-acc
-  spawn('paxy-acc@127.0.0.1', paxy3, stop_acceptors, []),
+  spawn('paxy-acc@127.0.0.1', paxy_remote, stop_acceptors, []),
   % Stop proposers on paxy-pro
-  spawn('paxy-pro@127.0.0.1', paxy3, stop_proposers, []).
+  spawn('paxy-pro@127.0.0.1', paxy_remote, stop_proposers, []).
 
 crash(Name) ->
     case whereis(Name) of
