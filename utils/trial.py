@@ -18,8 +18,9 @@ class Trial(ErlangCommand):
     proposers_timeout = 100
     proposers_backoff = 10
     module_version = "1"
+    count_sorries = 0
 
-    def __init__(self, module, sleep, num_proposers, num_acceptors, drop, delay, prop_timeout, prop_backoff, module_version="1", function="start"):
+    def __init__(self, module, sleep, num_proposers, num_acceptors, drop, delay, prop_timeout, prop_backoff, module_version="1", function="start", sorry=False, **kwargs):
         self.sleep = sleep
         self.num_proposers = num_proposers
         self.num_acceptors = num_acceptors
@@ -29,9 +30,12 @@ class Trial(ErlangCommand):
         self.proposers_timeout = prop_timeout
         self.proposers_backoff = prop_backoff
 
+        if sorry:
+            self.count_sorries = 1
+
         self.params = ""
-        if self.module_version == "1":
+        if str(self.module_version) == "1":
             self.params = f"{self.sleep}"
-        elif self.module_version == "2":
-            self.params = f"{self.sleep}, {self.num_proposers}, {self.num_acceptors}, {self.drop}, {self.acceptors_delay}, {self.proposers_timeout}, {self.proposers_backoff}"
+        elif str(self.module_version) == "2":
+            self.params = f"{self.sleep}, {self.num_proposers}, {self.num_acceptors}, {self.drop}, {self.acceptors_delay}, {self.proposers_timeout}, {self.proposers_backoff}, {self.count_sorries}"
         super().__init__(module, function, self.params)

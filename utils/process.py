@@ -7,20 +7,6 @@ time_pattern = r"\[Paxy\] Total elapsed time: (\d+) ms"
 done_pattern = r"ok."
 
 
-def open_erlang_shell():
-    """
-    Open an Erlang shell.
-    """
-    process = subprocess.Popen(
-        ["erl", "-name paxy2@127.0.0.1", "-setcookie", "paxy"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    return process
-
-
 def collect_erlang_responses(process, timeout):
     total_time = 0
     max_round = 0
