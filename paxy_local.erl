@@ -14,7 +14,7 @@
 -define(SKY, {135,206,235}).
 
   start(Sleep) ->
-    start(Sleep, 3, 5, 1, 0, 2000, 100, 0).
+    start(Sleep, 3, 5, 1, 1, 2000, 100, 0).
   start(Sleep, NumProposers, NumAcceptors, Drop, Delay, PropTimeout, PropBackoff, SorryCount) ->
     % Define lists of names and corresponding data
     AcceptorNames = [
