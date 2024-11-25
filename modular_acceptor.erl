@@ -1,12 +1,9 @@
 -module(modular_acceptor).
 -export([start/4]).
 
-%-define(delay, 500).
-%-define(drop, 1).
-
 start(Name, PanelId, Drop, Delay) ->
   spawn(fun() -> init(Name, PanelId, Drop, Delay) end).
-        
+
 init(Name, PanelId, Drop, Delay) ->
   Promised = order:null(), 
   Voted = order:null(),
@@ -16,6 +13,7 @@ init(Name, PanelId, Drop, Delay) ->
 acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay) ->
   receive
     {prepare, Proposer, Round} ->
+      T = rand:uniform(Delay),
       case order:gr(Round, Promised) of
         true ->
           P = rand:uniform(100),
@@ -23,7 +21,6 @@ acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay) ->
               io:format("message dropped~n");
             true ->
             %send message
-              T = rand:uniform(Delay),
               timer:send_after(T, Proposer, {promise, Round, Voted, Value}),
               %Proposer ! {promise, Round, Voted, Value}, % ... !  {promise, Round, Voted, Value}
               io:format("[Acceptor ~w] Phase 1: promised ~w voted ~w colour ~w~n",
@@ -35,14 +32,14 @@ acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay) ->
           end,
           acceptor(Name, Round, Voted, Value, PanelId, Drop, Delay);
         false ->
-          timer:send_after(delay, Proposer, {sorry, {prepare, Round}}),
+          timer:send_after(T, Proposer, {sorry, {prepare, Round}}),
           % Proposer ! {sorry, {prepare, Round}}, % {sorry, {prepare, Round}}
           acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay)
       end;
     {accept, Proposer, Round, Proposal} ->  % Proposal = {{N, I}, Value}
+      T = rand:uniform(Delay),
       case order:goe(Round, Promised) of
         true ->
-          T = rand:uniform(Delay),
           timer:send_after(T, Proposer, {vote, Round}),
           % Proposer ! {vote, Round}, % {vote, Round}
           case order:goe(Round, Voted) of % 
@@ -57,7 +54,7 @@ acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay) ->
               acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay)
           end;                            
         false ->
-          Proposer ! {sorry, {accept, Round}},
+          timer:send_after(T, Proposer, {sorry, {prepare, Round}}),
           acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay)
       end;
     stop ->

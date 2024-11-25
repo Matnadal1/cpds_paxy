@@ -1,149 +1,145 @@
-import re
-import select
-import subprocess
+import csv
+import signal
+import time
 
+from pexpect.popen_spawn import PopenSpawn
 
-class Trial:
-    sleep = ""
-    num_proposers = 1
-    num_acceptors = 1
-    drop = 0
-    delay = 0
-    module_version = "1"
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.ticker import MaxNLocator
 
-    def __init__(self, sleep, num_proposers, num_acceptors, drop, delay, module_version="1"):
-        self.sleep = sleep
-        self.num_proposers = num_proposers
-        self.num_acceptors = num_acceptors
-        self.drop = drop
-        self.delay = delay
-        self.module_version = module_version
+from random_tests import RANDOM_TESTS
+from utils import Trial, ErlangCommand, collect_erlang_responses, Plotter
+from trials import *
 
-    def __str__(self):
-        if self.module_version == "1":
-            return f"{self.sleep}"
-        elif self.module_version == "2":
-            return f"{self.sleep}, {self.num_proposers}, {self.num_acceptors}, {self.drop}, {self.delay}"
-        return ""
+# Trial(module_name, sleep, num_proposers, num_acceptors, drop, delay, prop_timeout, prop_backoff)
+TRIALS = RANDOM_TESTS[200:300]
+OUTPUT_NAME = "final_random_tests"
 
+NEW_TRIALS = True
+FILENAME = f"out/paxy_remote_sorry_delay_comp_1732220819.161141.csv"
 
-def generate_erlang_command(module, function, params: Trial):
-    """
-    Generate the Erlang command to execute.
-    Args:
-        module (str): Erlang module name.
-        function (str): Erlang function name.
-        params (str): Parameters to pass to the function (as a string).
-    Returns:
-        str: The Erlang command.
-    """
-    # Return the Erlang command with the halt instruction
-    return f"{module}:{function}({str(params)})."
+PLOT_HISTOGRAMS = False
 
-
-def open_erlang_shell():
-    """
-    Open an Erlang shell.
-    """
-    process = subprocess.Popen(
-        ["erl", "-name paxy@127.0.0.1", "-setcookie", "paxy"],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    return process
-
-
-def run_batch(module, function, batch_params, timeout=30):
+def run_batch(module, batch_trials, timeout=30, n=1):
     """
     Execute batch runs of an Erlang function with specified parameters.
     Args:
         timeout (int): Timeout duration in seconds.
         module (str): Erlang module name.
-        function (str): Erlang function name.
-        batch_params (list of Trial): List of parameter Trials.
+        batch_trials (list of Trial): List of parameter Trials.
     """
-    process = open_erlang_shell()
-
-    # batch_results = []
-
-    for idx, params in enumerate(batch_params):
-        command = generate_erlang_command(module, function, params)
+    for idx, cmd in enumerate(batch_trials):
         print("====================================================================")
-        print(f"Running batch {idx + 1}: {command}")
-        try:
+        print(f"Running batch {idx + 1}: {str(cmd)}")
+
+        process = PopenSpawn(["erl", "-name", f"paxy2-{idx}@127.0.0.1", "-setcookie", "paxos"])
+        total_time = 0
+        trial_time_results = []
+        trial_round_results = []
+        timeout_count = 0
+        for _ in range(n):
             # Execute the Erlang command in bash
-            process.stdin.write(command + "\n")
-            process.stdin.flush()
+            process.write(str(cmd) + "\n")
 
-            total_time, parsed_results = collect_erlang_responses(process, timeout)
+            trial_time, parsed_results, max_round, timeout_end = collect_erlang_responses(process, timeout)
+            total_time += trial_time
 
-            print(f"\nBatch {idx + 1} completed after {total_time} ms")
-            print(parsed_results)
-        except Exception as e:
-            process.kill()
-            print(f"Exception occurred: {e}")
-            break
-        command = generate_erlang_command(module, "stop", "")
-        process.stdin.write(command + "\n")
-        process.stdin.flush()
+            trial_time_results.append(trial_time)
+            if not timeout_end:
+                trial_round_results.append(max_round)
+            else:
+                timeout_count += 1
+                trial_round_results.append(max_round)
+                print(f"Timeout occurred in batch {idx + 1} after {max_round} rounds.")
+
+            command = str(ErlangCommand(module, "stopAll", ""))
+            process.write(command + "\n")
+            time.sleep(0.1)
+        process.kill(signal.SIGTERM)
+        print(f"\nBatch {idx + 1} completed after {total_time} ms")
         print("====================================================================")
-
-
-def collect_erlang_responses(process, timeout):
-    responses = []
-    while True:
-        # Wait for data on process.stdout with a timeout
-        ready, _, _ = select.select([process.stdout], [], [], timeout)
-        if ready:  # If data is ready
-            line = process.stdout.readline()
-            if not line or "ok." in line.strip():  # End of stream
-                break
-            responses.append(line.strip())
-        else:
-            print(f"Timeout after {timeout} seconds with no new data.")
-            break  # Exit the loop on timeout
-    return parse_erlang_output(responses)  # Parse the collected lines
-
-
-def parse_erlang_output(output_lines):
-    # Regular expression pattern
-    total_time = 0
-    pattern = r"\[Proposer (\w+)\] DECIDED (\{[\d,]+\}) in round (\{\d+,\w+\}) after (\d+) ms"
-    pattern_time = r"\[Paxy\] Total elapsed time: (\d+) ms"
-
-    parsed_results = []
-    for line in output_lines:
-        match = re.match(pattern, line)
-        if match:
-            proposer = match.group(1)
-            decision = match.group(2)
-            round_info = match.group(3)
-
-            time_taken = int(match.group(4))  # Convert time to integer
-            parsed_results.append({
-                "proposer": proposer,
-                "decision": decision,
-                "round": round_info,
-                "time_ms": time_taken
-            })
-
-        match_time = re.match(pattern_time, line)
-        if match_time:
-            total_time = int(match_time.group(1))
-    return total_time, parsed_results
+        yield total_time, trial_time_results, trial_round_results, timeout_count
 
 
 if __name__ == "__main__":
-    # Erlang module and function
-    module_name = "paxy2"
-    function_name = "start"
-    
-    # Example batch parameters: [Sleep, NumProposers, NumAcceptors, Drop, Delay]
-    # Provide each parameter set as a string in the format you want Erlang to interpret
-    batch_parameters = [
-        Trial(sleep="[1000, 1200, 1400, 1000, 1000, 10, 50, 500]", num_proposers=3, num_acceptors=5, drop=10, delay=10, module_version="2"),
-    ]
-    
-    run_batch(module_name, function_name, batch_parameters)
+
+    if NEW_TRIALS:
+        num_proposers = []
+        num_acceptors = []
+        drop_percentages = []
+        delays = []
+        rounds = []
+        timeouts = []
+        backoffs = []
+        elapsed_times = []
+        total_times = []
+        sorries = []
+        timeout_results = []
+        try:
+            for i, (trial_input, (total_time, trial_time_results, trial_round_results, timeout_count)) in enumerate(zip(
+                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=5))):
+
+                sorries.append(trial_input.count_sorries)
+                num_proposers.append(trial_input.num_proposers)
+                num_acceptors.append(trial_input.num_acceptors)
+                delays.append(trial_input.acceptors_delay)
+                drop_percentages.append(trial_input.drop)
+                timeouts.append(trial_input.proposers_timeout)
+                backoffs.append(trial_input.proposers_backoff)
+
+                timeout_results.append(timeout_count)
+                rounds.append(np.average(trial_round_results))
+                elapsed_times.append(np.average(trial_time_results))
+                total_times.append(total_time)
+
+                if PLOT_HISTOGRAMS:
+                    fig, axs = plt.subplots(2, figsize=(8, 6))
+                    axs[0].hist(trial_time_results, bins=10, color='b', alpha=0.5)
+                    axs[0].set_xlim(min(trial_time_results), max(trial_time_results))
+                    axs[0].set_xlabel('Time taken (ms)')
+                    axs[0].set_ylabel('Frequency')
+
+                    axs[1].hist(trial_round_results, bins=10, color='r', alpha=0.5)
+                    axs[1].xaxis.set_major_locator(MaxNLocator(integer=True))
+                    axs[1].set_xlabel('Round')
+                    axs[1].set_ylabel('Frequency')
+
+                    fig.suptitle(
+                        f"Trial {i + 1} (delay={trial_input.acceptors_delay}, drop={trial_input.drop}) "
+                        f"Results: Time Taken and Round Frequency",
+                        fontsize=14,
+                    )
+                    fig.tight_layout()
+                    plt.show()
+        except KeyboardInterrupt as e:
+            print("Interrupted by user.")
+
+        FILENAME = f"out/{module_name}_{OUTPUT_NAME}_{time.time()}.csv"
+        with open(FILENAME, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["sorry", "num_proposers", "num_acceptors", "drop_percentage", "delay", "timeouts", "backoffs", "relative_delay", "rounds", "elapsed_times", "total_times", "timeout_count"])
+            for i_num_proposers, i_num_acceptors, i_drop_percentage, i_delay, i_timeouts, i_backoffs, i_rounds, i_elapsed_times, i_total_times, i_count_sorries, i_timeout_count in zip(
+                    num_proposers, num_acceptors, drop_percentages, delays, timeouts, backoffs, rounds, elapsed_times, total_times, sorries, timeout_results):
+                writer.writerow(
+                    [
+                        i_count_sorries,
+                        i_num_proposers,
+                        i_num_acceptors,
+                        i_drop_percentage,
+                        i_delay,
+                        i_timeouts,
+                        i_backoffs,
+                        (i_delay/i_timeouts),
+                        i_rounds,
+                        i_elapsed_times,
+                        i_total_times,
+                        i_timeout_count,
+                    ]
+                )
+
+    # plotter = Plotter(FILENAME)
+    # plotter.plot("num_proposers", "rounds", "Proposers vs Rounds")
+    # plotter.plot("num_proposers", "elapsed_times", "Proposers vs Consensus Time")
+    # plotter.plot_n_lines("sorry", "Delay vs Rounds", "delay", "rounds", ["Not Sorry", "Sorry"])
+    # plotter.plot_n_lines("sorry", "Delay vs Consensus Time", "delay", "elapsed_times", ["Not Sorry", "Sorry"])
