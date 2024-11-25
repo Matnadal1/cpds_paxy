@@ -13,8 +13,8 @@ from utils import Trial, ErlangCommand, collect_erlang_responses, Plotter
 from trials import *
 
 # Trial(module_name, sleep, num_proposers, num_acceptors, drop, delay, prop_timeout, prop_backoff)
-TRIALS = RANDOM_TESTS
-OUTPUT_NAME = "random_tests"
+TRIALS = RANDOM_TESTS[200:300]
+OUTPUT_NAME = "final_random_tests"
 
 NEW_TRIALS = True
 FILENAME = f"out/paxy_remote_sorry_delay_comp_1732220819.161141.csv"
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         timeout_results = []
         try:
             for i, (trial_input, (total_time, trial_time_results, trial_round_results, timeout_count)) in enumerate(zip(
-                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=10))):
+                TRIALS, run_batch(module_name, TRIALS, timeout=10, n=5))):
 
                 sorries.append(trial_input.count_sorries)
                 num_proposers.append(trial_input.num_proposers)

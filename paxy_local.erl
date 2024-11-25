@@ -1,5 +1,5 @@
 -module(paxy_local).
--export([start/1, start/7, stop/0, stop/1, stopAll/0]).
+-export([start/1, start/8, stop/0, stop/1, stopAll/0]).
 
 -define(RED, {255,0,0}).
 -define(BLUE, {0,0,255}).
@@ -14,8 +14,8 @@
 -define(SKY, {135,206,235}).
 
   start(Sleep) ->
-    start(Sleep, 3, 5, 1, 0, 2000, 100).
-  start(Sleep, NumProposers, NumAcceptors, Drop, Delay, PropTimeout, PropBackoff) ->
+    start(Sleep, 3, 5, 1, 0, 2000, 100, 0).
+  start(Sleep, NumProposers, NumAcceptors, Drop, Delay, PropTimeout, PropBackoff, SorryCount) ->
     % Define lists of names and corresponding data
     AcceptorNames = [
       "Homer", "Marge", "Bart", "Lisa", "Maggie", 
@@ -65,7 +65,7 @@
         start_acceptors(AccIds, SelectedAccRegister, Drop, Delay),
         spawn(fun() -> 
           Begin = erlang:monotonic_time(),
-          start_proposers(PropIds, SelectedPropInfo, SelectedAccRegister, Sleep, PropTimeout, PropBackoff, self()),
+          start_proposers(PropIds, SelectedPropInfo, SelectedAccRegister, Sleep, PropTimeout, PropBackoff, SorryCount, self()),
           wait_proposers(length(PropIds)),
           End = erlang:monotonic_time(),
           Elapsed = erlang:convert_time_unit(End-Begin, native, millisecond),
@@ -85,15 +85,15 @@ start_acceptors(AccIds, AccReg, Drop, Delay) ->
       start_acceptors(Rest, RegNameRest, Drop, Delay)
   end.
 
-start_proposers(PropIds, PropInfo, Acceptors, Sleep, Timeout, Backoff, Main) ->
+start_proposers(PropIds, PropInfo, Acceptors, Sleep, Timeout, Backoff, SorryCount, Main) ->
   case PropIds of
     [] ->
       ok;
     [PropId|Rest] ->
       [{RegName, Colour}|RestInfo] = PropInfo,
       [FirstSleep|RestSleep] = Sleep,
-      modular_proposer:start(RegName, Colour, Acceptors, FirstSleep, PropId, Timeout, Backoff, Main),	
-      start_proposers(Rest, RestInfo, Acceptors, RestSleep, Timeout, Backoff, Main)
+      modular_proposer:start(RegName, Colour, Acceptors, FirstSleep, PropId, Timeout, Backoff, SorryCount, Main),	
+      start_proposers(Rest, RestInfo, Acceptors, RestSleep, Timeout, Backoff, SorryCount, Main)
   end.
 
 wait_proposers(0) ->
