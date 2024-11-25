@@ -4,11 +4,14 @@
 start(Name, PanelId, Drop, Delay) ->
   spawn(fun() -> init(Name, PanelId, Drop, Delay) end).
 
+init(Name, na, Drop, Delay) ->  % Add this clause for crashed acceptors
+    pers:open(Name),
+    {Promised, Voted, Value, PanelId} = pers:read(Name),  % Read stored state including PanelId
+    acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay);
 init(Name, PanelId, Drop, Delay) ->
-  Promised = order:null(), 
-  Voted = order:null(),
-  Value = na,
-  acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay).
+    pers:open(Name),
+    {Promised, Voted, Value, _} = pers:read(Name),  % Read stored state
+    acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay).
 
 acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay) ->
   receive
@@ -20,12 +23,13 @@ acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay) ->
           if P =< Drop ->
               io:format("message dropped~n");
             true ->
-            %send message
+              pers:store(Name, Round, Voted, Value, PanelId),
+              %send message
               timer:send_after(T, Proposer, {promise, Round, Voted, Value}),
               %Proposer ! {promise, Round, Voted, Value}, % ... !  {promise, Round, Voted, Value}
               io:format("[Acceptor ~w] Phase 1: promised ~w voted ~w colour ~w~n",
                  [Name, Round, Voted, Value]),
-            % Update gui
+              % Update gui
               Colour = case Value of na -> {0,0,0}; _ -> Value end,
               PanelId ! {updateAcc, "Voted: " ++ io_lib:format("~p", [Voted]), 
                      "Promised: " ++ io_lib:format("~p", [Round]), Colour}
@@ -44,6 +48,7 @@ acceptor(Name, Promised, Voted, Value, PanelId, Drop, Delay) ->
           % Proposer ! {vote, Round}, % {vote, Round}
           case order:goe(Round, Voted) of % 
             true ->
+              pers:store(Name, Promised, Round, Proposal, PanelId),
               io:format("[Acceptor ~w] Phase 2: promised ~w voted ~w colour ~w~n",
                  [Name, Promised, Round, Proposal]),
               % Update gui
